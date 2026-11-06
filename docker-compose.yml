@@ -1,0 +1,133 @@
+services:
+  # ================================================================
+  # PostgreSQL — Primary database
+  # ================================================================
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: proofhire-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: proofhire
+      POSTGRES_PASSWORD: proofhire_dev
+      POSTGRES_DB: proofhire_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      - ./infrastructure/docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U proofhire -d proofhire_dev"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # ================================================================
+  # Core API — Node.js / Express
+  # ================================================================
+  api:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/api.Dockerfile
+    container_name: proofhire-api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://proofhire:proofhire_dev@db:5432/proofhire_dev
+      API_PORT: 4000
+      CORS_ORIGIN: http://localhost:3000
+      SESSION_SECRET: dev_session_secret_change_in_production_min_64_chars_aaa
+      LOG_LEVEL: info
+      FEATURE_AI_ENABLED: "false"
+      FEATURE_EMAIL_ENABLED: "false"
+      AI_SERVICE_URL: http://ai-service:8000
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./apps/api:/app/apps/api
+      - /app/apps/api/node_modules
+      - api-uploads:/app/apps/api/uploads
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:4000/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  # ================================================================
+  # Web App — React / Vite
+  # ================================================================
+  web:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/web.Dockerfile
+    container_name: proofhire-web
+    restart: unless-stopped
+    depends_on:
+      - api
+    environment:
+      VITE_API_URL: http://localhost:4000
+      VITE_APP_ENV: development
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./apps/web:/app/apps/web
+      - /app/apps/web/node_modules
+
+  # ================================================================
+  # AI Service — Python / FastAPI (optional)
+  # ================================================================
+  ai-service:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/ai-service.Dockerfile
+    container_name: proofhire-ai
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://proofhire:proofhire_dev@db:5432/proofhire_dev
+      AI_SERVICE_PORT: 8000
+      LOG_LEVEL: info
+      # LLM provider keys — set in .env file, not here
+      LLM_PROVIDER: ${LLM_PROVIDER:-openai}
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    # AI service is optional — mark as non-critical
+    profiles:
+      - ai
+
+  # ================================================================
+  # Mailhog — Local email testing (development only)
+  # ================================================================
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: proofhire-mail
+    restart: unless-stopped
+    ports:
+      - "1025:1025"   # SMTP
+      - "8025:8025"   # Web UI for viewing emails
+    profiles:
+      - mail
+
+volumes:
+  db-data:
+    driver: local
+  api-uploads:
+    driver: local
+
+networks:
+  default:
+    name: proofhire-network

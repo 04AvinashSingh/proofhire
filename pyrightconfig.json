@@ -1,0 +1,17 @@
+{
+  "include": [
+    "apps/ai-service/src",
+    "apps/ai-service/tests"
+  ],
+  "exclude": [
+    "apps/ai-service/.venv",
+    "**/node_modules"
+  ],
+  "venvPath": "apps/ai-service",
+  "venv": ".venv",
+  "extraPaths": [
+    "apps/ai-service",
+    "apps/ai-service/src"
+  ],
+  "reportMissingImports": "warning"
+}

@@ -1,0 +1,11 @@
+{
+  "name": "@proofhire/ai-service",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Python FastAPI AI service for semantic matching and evidence verification",
+  "scripts": {
+    "test": "./.venv/bin/pytest tests/ -v",
+    "start": "./.venv/bin/uvicorn src.main:app --host 0.0.0.0 --port 8000",
+    "dev": "./.venv/bin/uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload"
+  }
+}

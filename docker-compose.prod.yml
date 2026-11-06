@@ -1,0 +1,129 @@
+services:
+  # ================================================================
+  # PostgreSQL — Primary Production Database
+  # ================================================================
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: proofhire-prod-db
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-proofhire}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-proofhire_prod}
+    volumes:
+      - prod-db-data:/var/lib/postgresql/data
+      - ./infrastructure/docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-proofhire} -d ${POSTGRES_DB:-proofhire_prod}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: "1.0"
+
+  # ================================================================
+  # Core API — Production Node.js / Express
+  # ================================================================
+  api:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/api.prod.Dockerfile
+    container_name: proofhire-prod-api
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER:-proofhire}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-proofhire_prod}
+      API_PORT: 4000
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost}
+      SESSION_SECRET: ${SESSION_SECRET}
+      LOG_LEVEL: info
+      FEATURE_AI_ENABLED: ${FEATURE_AI_ENABLED:-true}
+      AI_SERVICE_URL: http://ai-service:8000
+    ports:
+      - "4000:4000"
+    volumes:
+      - prod-api-uploads:/app/apps/api/uploads
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:4000/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "1.0"
+
+  # ================================================================
+  # Web App — Production Nginx SPA
+  # ================================================================
+  web:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/web.prod.Dockerfile
+    container_name: proofhire-prod-web
+    restart: always
+    depends_on:
+      - api
+    ports:
+      - "80:80"
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost/ || exit 1"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: "0.5"
+
+  # ================================================================
+  # AI Service — Production Python / FastAPI
+  # ================================================================
+  ai-service:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/ai-service.prod.Dockerfile
+    container_name: proofhire-prod-ai
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      AI_SERVICE_PORT: 8000
+      LOG_LEVEL: info
+      LLM_PROVIDER: ${LLM_PROVIDER:-mock}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: "1.5"
+
+volumes:
+  prod-db-data:
+    driver: local
+  prod-api-uploads:
+    driver: local
+
+networks:
+  default:
+    name: proofhire-prod-network
+

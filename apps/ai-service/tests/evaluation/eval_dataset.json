@@ -1,0 +1,30 @@
+[
+  {
+    "id": "eval-001",
+    "requirement_text": "Experience with TypeScript and strict type system",
+    "evidence_text": "Built a scalable full-stack application with TypeScript 5.6 using strict compiler settings and zero any types.",
+    "expected_result": "SUPPORTED",
+    "expected_citations": ["TypeScript 5.6 using strict compiler settings and zero any types"]
+  },
+  {
+    "id": "eval-002",
+    "requirement_text": "Experience managing Kubernetes cluster deployments with Helm",
+    "evidence_text": "Created HTML portfolio and hosted on GitHub Pages with custom domain.",
+    "expected_result": "INSUFFICIENT",
+    "expected_citations": []
+  },
+  {
+    "id": "eval-003",
+    "requirement_text": "Hands-on experience with Go language concurrency and goroutines",
+    "evidence_text": "I have never worked with Go and have no experience with goroutines or channels.",
+    "expected_result": "CONTRADICTED",
+    "expected_citations": ["never worked with Go"]
+  },
+  {
+    "id": "eval-004",
+    "requirement_text": "Experience writing relational database migrations in PostgreSQL",
+    "evidence_text": "Authored schema migrations for 12 database tables in PostgreSQL with automated rollback scripts.",
+    "expected_result": "SUPPORTED",
+    "expected_citations": ["schema migrations for 12 database tables in PostgreSQL"]
+  }
+]
