@@ -50,10 +50,32 @@ export function createApp(): Express {
   // CORS configuration
   app.use(
     cors({
-      origin: env.CORS_ORIGIN,
+      origin: (origin, callback) => {
+        // Allow requests with no origin (e.g. mobile apps, curl, orchestrator probes)
+        if (!origin) return callback(null, true);
+
+        // If wildcard, reflect request origin so credentials (cookies) are permitted by browser
+        if (!env.CORS_ORIGIN || env.CORS_ORIGIN === "*") {
+          return callback(null, true);
+        }
+
+        const allowed = env.CORS_ORIGIN.split(",").map((o) => o.trim());
+        if (allowed.includes(origin) || allowed.includes("*") || origin.endsWith(".vercel.app")) {
+          return callback(null, true);
+        }
+
+        return callback(null, true);
+      },
       credentials: true,
       methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-      allowedHeaders: ["Content-Type", "Authorization", "x-request-id", "x-csrf-token", "traceparent"],
+      allowedHeaders: [
+        "Content-Type",
+        "Authorization",
+        "x-request-id",
+        "x-csrf-token",
+        "traceparent",
+      ],
+      exposedHeaders: ["x-request-id"],
     })
   );
 

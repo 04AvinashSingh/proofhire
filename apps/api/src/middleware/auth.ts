@@ -29,12 +29,14 @@ export function setAuthCookies(
 ): void {
   const isProduction = env.NODE_ENV === "production";
   const maxAge = 2 * 60 * 60 * 1000; // 2 hours
+  const sameSite = isProduction ? "none" : "lax";
+  const secure = isProduction ? true : false;
 
-  // HttpOnly, Secure, SameSite=Strict session cookie (ADR-004)
+  // HttpOnly, Secure session cookie (SameSite=None in production for cross-domain Vercel/Render hosting)
   res.cookie(SESSION_COOKIE_NAME, rawToken, {
     httpOnly: true,
-    secure: isProduction,
-    sameSite: "strict",
+    secure,
+    sameSite,
     path: "/",
     maxAge,
   });
@@ -42,8 +44,8 @@ export function setAuthCookies(
   // Non-HttpOnly CSRF token cookie for double-submit verification
   res.cookie(CSRF_COOKIE_NAME, csrfToken, {
     httpOnly: false,
-    secure: isProduction,
-    sameSite: "strict",
+    secure,
+    sameSite,
     path: "/",
     maxAge,
   });
@@ -54,18 +56,20 @@ export function setAuthCookies(
  */
 export function clearAuthCookies(res: Response): void {
   const isProduction = env.NODE_ENV === "production";
+  const sameSite = isProduction ? "none" : "lax";
+  const secure = isProduction ? true : false;
 
   res.clearCookie(SESSION_COOKIE_NAME, {
     httpOnly: true,
-    secure: isProduction,
-    sameSite: "strict",
+    secure,
+    sameSite,
     path: "/",
   });
 
   res.clearCookie(CSRF_COOKIE_NAME, {
     httpOnly: false,
-    secure: isProduction,
-    sameSite: "strict",
+    secure,
+    sameSite,
     path: "/",
   });
 }
