@@ -15,7 +15,11 @@ const EnvSchema = z.object({
   NODE_ENV: z
     .enum(["development", "test", "production"])
     .default("development"),
-  API_PORT: z.coerce.number().int().positive().default(4000),
+  API_PORT: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(Number(process.env.PORT) || 4000),
   DATABASE_URL: z
     .string()
     .url("DATABASE_URL must be a valid PostgreSQL connection URL")
