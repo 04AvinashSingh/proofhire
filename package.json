@@ -8,6 +8,7 @@
     "apps/*"
   ],
   "scripts": {
+    "start": "npm run start --workspace=@proofhire/api",
     "build": "npm run build --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
@@ -24,5 +25,9 @@
   "engines": {
     "node": ">=20.0.0",
     "npm": ">=10.0.0"
+  },
+  "dependencies": {
+    "@neon/config": "^1.11.3",
+    "@neon/env": "^1.6.15"
   }
 }
