@@ -1,0 +1,158 @@
+name: ProofHire CI/CD Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # =========================================================================
+  # 1. Code Quality & Static Analysis
+  # =========================================================================
+  code-quality:
+    name: Typecheck & Static Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - name: Install Workspace Dependencies
+        run: npm ci
+
+      - name: Run TypeScript Typecheck (Shared Contracts, API, Web)
+        run: npm run typecheck
+
+  # =========================================================================
+  # 2. Automated Test Matrix (Web, API, AI Service, and E2E)
+  # =========================================================================
+  test-suites:
+    name: Automated Unit & Integration Tests
+    needs: code-quality
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: test_proofhire
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - name: Setup Python 3.11 (AI Microservice)
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install Node Dependencies
+        run: npm ci
+
+      - name: Install Python Dependencies & Run AI Service Tests
+        working-directory: apps/ai-service
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-asyncio
+          pytest tests/
+
+      - name: Run Web UI Tests (Vitest & Testing Library)
+        run: npm --prefix apps/web test
+
+      - name: Run Core API Tests & Cryptographic Audit Verification
+        env:
+          DATABASE_URL: postgresql://test_user:test_password@localhost:5432/test_proofhire
+          SESSION_SECRET: test-session-secret-for-ci-minimum-32-chars-long
+          NODE_ENV: test
+        run: |
+          npm --prefix apps/api run db:migrate
+          npm --prefix apps/api test
+
+  # =========================================================================
+  # 3. Multi-Stage Docker Container Build Verification
+  # =========================================================================
+  container-builds:
+    name: Docker Multi-Stage Image Builds
+    needs: test-suites
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Production API Container Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: infrastructure/docker/api.prod.Dockerfile
+          push: false
+          tags: proofhire-api:latest
+
+      - name: Build Production Web Container Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: infrastructure/docker/web.prod.Dockerfile
+          push: false
+          tags: proofhire-web:latest
+
+  # =========================================================================
+  # 4. Continuous Deployment (CD Trigger on Main Branch)
+  # =========================================================================
+  deploy:
+    name: Deploy to Production
+    needs: [test-suites, container-builds]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # Trigger Render / Railway Deploy Hook (if configured in GitHub Repository Secrets)
+      - name: Trigger Backend Deployment Hook (Render / Railway)
+        if: env.BACKEND_DEPLOY_HOOK_URL != ''
+        env:
+          BACKEND_DEPLOY_HOOK_URL: ${{ secrets.BACKEND_DEPLOY_HOOK_URL }}
+        run: |
+          echo "Triggering automated backend service deployment..."
+          curl -s -X POST "$BACKEND_DEPLOY_HOOK_URL"
+
+      # Deploy Web Frontend to Vercel (if configured)
+      - name: Deploy Frontend to Vercel
+        if: env.VERCEL_TOKEN != ''
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          npx vercel --prod --token "$VERCEL_TOKEN"
+
