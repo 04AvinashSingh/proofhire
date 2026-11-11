@@ -1,8 +1,8 @@
 import { pgTable, uuid, text, timestamp, jsonb, index } from "drizzle-orm/pg-core";
-import { projectEvidence } from "./projectEvidence";
-import { candidateProfiles } from "./candidateProfiles";
-import { jobRequirements } from "./jobRequirements";
-import { vector } from "./customTypes";
+import { projectEvidence } from "./projectEvidence.js";
+import { candidateProfiles } from "./candidateProfiles.js";
+import { jobRequirements } from "./jobRequirements.js";
+import { vector } from "./customTypes.js";
 
 export const evidenceEmbeddings = pgTable(
   "evidence_embeddings",

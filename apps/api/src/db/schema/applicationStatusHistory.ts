@@ -1,6 +1,6 @@
 import { pgTable, uuid, text, timestamp, index } from "drizzle-orm/pg-core";
-import { applications } from "./applications";
-import { users } from "./users";
+import { applications } from "./applications.js";
+import { users } from "./users.js";
 
 export const applicationStatusHistory = pgTable(
   "application_status_history",

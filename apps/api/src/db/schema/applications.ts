@@ -1,6 +1,6 @@
 import { pgTable, uuid, text, timestamp, index, uniqueIndex } from "drizzle-orm/pg-core";
-import { jobs } from "./jobs";
-import { users } from "./users";
+import { jobs } from "./jobs.js";
+import { users } from "./users.js";
 
 export const applications = pgTable(
   "applications",

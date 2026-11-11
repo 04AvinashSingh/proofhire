@@ -1,5 +1,5 @@
 import { pgTable, uuid, text, boolean, timestamp, index, unique } from "drizzle-orm/pg-core";
-import { candidateProfiles } from "./candidateProfiles";
+import { candidateProfiles } from "./candidateProfiles.js";
 
 export const candidateSkills = pgTable(
   "candidate_skills",

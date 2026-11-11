@@ -1,7 +1,7 @@
 import { pgTable, uuid, text, boolean, timestamp, index } from "drizzle-orm/pg-core";
-import { applications } from "./applications";
-import { jobRequirements } from "./jobRequirements";
-import { projectEvidence } from "./projectEvidence";
+import { applications } from "./applications.js";
+import { jobRequirements } from "./jobRequirements.js";
+import { projectEvidence } from "./projectEvidence.js";
 
 export const evidenceMappings = pgTable(
   "evidence_mappings",

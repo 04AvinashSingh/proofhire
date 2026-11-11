@@ -1,5 +1,5 @@
 import { pgTable, uuid, text, integer, timestamp, index } from "drizzle-orm/pg-core";
-import { candidateProfiles } from "./candidateProfiles";
+import { candidateProfiles } from "./candidateProfiles.js";
 
 export const candidateEducation = pgTable(
   "candidate_education",

@@ -1,6 +1,6 @@
 import { pgTable, uuid, text, timestamp, jsonb, boolean, real, index } from "drizzle-orm/pg-core";
-import { applications } from "./applications";
-import { jobRequirements } from "./jobRequirements";
+import { applications } from "./applications.js";
+import { jobRequirements } from "./jobRequirements.js";
 
 export const aiAssessments = pgTable(
   "ai_assessments",
