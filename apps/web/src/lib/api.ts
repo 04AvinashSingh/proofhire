@@ -32,7 +32,7 @@ import type {
   EvaluationNoteDto,
 } from "@proofhire/shared-contracts";
 
-const API_BASE = ""; // Uses Vite proxy in development
+const API_BASE = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
 
 export function getCookie(name: string): string | null {
   if (typeof document === "undefined") return null;
