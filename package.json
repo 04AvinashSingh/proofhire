@@ -10,6 +10,7 @@
   "scripts": {
     "start": "npm run start --workspace=@proofhire/api",
     "build": "npm run build --workspaces --if-present",
+    "build:api": "npm run build --workspace=@proofhire/shared-contracts && npm run build --workspace=@proofhire/api",
     "test": "npm run test --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present",
@@ -19,15 +20,13 @@
     "db:migrate": "npm run db:migrate --workspace=@proofhire/api",
     "db:seed": "npm run db:seed --workspace=@proofhire/api"
   },
-  "devDependencies": {
+  "dependencies": {
+    "@neon/config": "^1.11.3",
+    "@neon/env": "^1.6.15",
     "typescript": "^5.6.3"
   },
   "engines": {
     "node": ">=20.0.0",
     "npm": ">=10.0.0"
-  },
-  "dependencies": {
-    "@neon/config": "^1.11.3",
-    "@neon/env": "^1.6.15"
   }
 }
