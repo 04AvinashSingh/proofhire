@@ -9,7 +9,7 @@
   ],
   "scripts": {
     "start": "npm run start --workspace=@proofhire/api",
-    "build": "npm run build --workspaces --if-present",
+    "build": "npm run build --workspace=@proofhire/shared-contracts && npm run build --workspace=@proofhire/api && npm run build --workspace=@proofhire/web",
     "build:api": "npm run build --workspace=@proofhire/shared-contracts && npm run build --workspace=@proofhire/api",
     "test": "npm run test --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",

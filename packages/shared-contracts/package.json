@@ -13,8 +13,8 @@
     }
   },
   "scripts": {
-    "build": "tsc -b",
-    "clean": "rm -rf dist",
+    "build": "tsc",
+    "clean": "rm -rf dist tsconfig.tsbuildinfo",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },

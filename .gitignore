@@ -24,6 +24,7 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 *.log
+*.tsbuildinfo
 
 # Testing & Coverage
 coverage/
